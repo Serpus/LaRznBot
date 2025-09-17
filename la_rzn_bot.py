@@ -1,6 +1,7 @@
 import json
 import random
 from datetime import datetime, timedelta, time
+from sched import scheduler
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
@@ -48,7 +49,7 @@ def get_random_time_between_11_and_12():
     return time(11, minute, second)
 
 
-def schedule_daily_job(scheduler: AsyncIOScheduler):
+async def schedule_daily_job(scheduler: AsyncIOScheduler):
     # Сначала удаляем старую задачу, если она была
     scheduler.remove_all_jobs()
 
@@ -69,18 +70,20 @@ def schedule_daily_job(scheduler: AsyncIOScheduler):
         name="Ежедневное сообщение в случайное время с 11 до 12"
     )
 
-    log(f"Сообщение запланировано на сегодня: {random_time.strftime('%H:%M:%S')}")
+    text = f"Отправка сообщения запланирована на {random_time.strftime('%H:%M:%S')}"
+    await bot.send_message(chat_id=649062985, text=text)
+    log(text)
 
 
 async def on_startup(scheduler: AsyncIOScheduler):
     # Планируем первую задачу
-    schedule_daily_job(scheduler)
+    await schedule_daily_job(scheduler)
 
     # Перепланирование на завтра (чтобы каждый день было новое случайное время)
     async def reschedule():
         while True:
             await asyncio.sleep(24 * 3600)  # ждём 24 часа
-            schedule_daily_job(scheduler)
+            await schedule_daily_job(scheduler)
 
     # Запускаем фоновую задачу для перепланирования
     asyncio.create_task(reschedule())
