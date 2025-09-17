@@ -22,9 +22,10 @@ async def is_admin(chat_id, user_id):
     chat_member = await bot.get_chat_member(chat_id, user_id)
     return isinstance(chat_member, (ChatMemberAdministrator, ChatMemberOwner))
 
-# @dp.message(Command("test"))
+@dp.message(Command("test"))
 async def echo(message: types.Message):
-    await bot.send_message(chat_id=chat_id_slujebka, text="Тестовое сообщение")
+    await message.answer("Тестовое сообщение")
+    # await bot.send_message(chat_id=chat_id_slujebka, text="Тестовое сообщение")
 
 @dp.error()
 async def handle_errors(event, exception):
