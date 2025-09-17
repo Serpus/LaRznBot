@@ -1,12 +1,14 @@
 import json
 import random
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
 from aiogram.types import ChatMemberAdministrator, ChatMemberOwner
 from dotenv import load_dotenv
 from bot_logger import log
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
 
 import os
 
@@ -29,8 +31,70 @@ async def handle_errors(event, exception):
     log(f"Ошибка: {exception}")
 
 
-# Запуск бота
+async def send_daily_message():
+    message = "Привет! Это ежедневное сообщение в случайное время с 11:00 до 12:00!"
+    try:
+        await bot.send_message(chat_id=chat_id_slujebka, text=message)
+        log("Сообщение отправлено!")
+    except Exception as e:
+        log(f"Ошибка при отправке сообщения: {e}")
+
+
+def get_random_time_between_11_and_12():
+    """Возвращает случайное время между 11:00 и 11:59"""
+    minute = random.randint(0, 59)
+    second = random.randint(0, 59)
+    return time(11, minute, second)
+
+
+def schedule_daily_job(scheduler: AsyncIOScheduler):
+    # Сначала удаляем старую задачу, если она была
+    scheduler.remove_all_jobs()
+
+    # Получаем случайное время
+    random_time = get_random_time_between_11_and_12()
+
+    # Планируем задачу на это время каждый день
+    scheduler.add_job(
+        send_daily_message,
+        trigger=CronTrigger(
+            hour=random_time.hour,
+            minute=random_time.minute,
+            second=random_time.second,
+            day="*"
+        ),
+        id="daily_message",
+        replace_existing=True,
+        name="Ежедневное сообщение в случайное время с 11 до 12"
+    )
+
+    log(f"Сообщение запланировано на сегодня: {random_time.strftime('%H:%M:%S')}")
+
+
+async def on_startup(scheduler: AsyncIOScheduler):
+    # Планируем первую задачу
+    schedule_daily_job(scheduler)
+
+    # Перепланирование на завтра (чтобы каждый день было новое случайное время)
+    async def reschedule():
+        while True:
+            await asyncio.sleep(24 * 3600)  # ждём 24 часа
+            schedule_daily_job(scheduler)
+
+    # Запускаем фоновую задачу для перепланирования
+    asyncio.create_task(reschedule())
+
+
 async def main():
+    scheduler = AsyncIOScheduler(timezone="Europe/Moscow")  # Укажите нужный часовой пояс
+
+    # При старте сразу планируем задачу
+    await on_startup(scheduler)
+
+    # Запускаем планировщик
+    scheduler.start()
+
+    # Запускаем бота
     await dp.start_polling(bot)
 
 
