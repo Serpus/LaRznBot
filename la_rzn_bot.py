@@ -1,4 +1,6 @@
 import random
+
+import callbacks
 import keyboard
 from datetime import datetime, timedelta, time
 from email.policy import default
@@ -33,6 +35,8 @@ message_text = f"""Для вашего удобства взяли с сайта
 {short_vote_link}
 
 <i>*Приложение должно быть установлено</i>"""
+
+callbacks.register(dp)
 
 
 def generate_daily_message():
