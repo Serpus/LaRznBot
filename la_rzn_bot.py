@@ -1,7 +1,5 @@
-import json
 import random
 from datetime import datetime, timedelta, time
-from sched import scheduler
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
@@ -16,17 +14,20 @@ import os
 load_dotenv()
 bot = Bot(token=os.getenv("API_KEY"))
 dp = Dispatcher()
-chat_id_slujebka=-1003043852228
+chat_id_slujebka = -1003043852228
+
 
 # Проверка, является ли пользователь администратором
 async def is_admin(chat_id, user_id):
     chat_member = await bot.get_chat_member(chat_id, user_id)
     return isinstance(chat_member, (ChatMemberAdministrator, ChatMemberOwner))
 
+
 @dp.message(Command("test"))
 async def echo(message: types.Message):
     await message.answer("Тестовое сообщение")
     # await bot.send_message(chat_id=chat_id_slujebka, text="Тестовое сообщение")
+
 
 @dp.error()
 async def handle_errors(event, exception):
@@ -75,6 +76,16 @@ async def schedule_daily_job(scheduler: AsyncIOScheduler):
     log(text)
 
 
+def get_next_10am(scheduler: AsyncIOScheduler) -> float:
+    now = datetime.now(scheduler.timezone)
+    next_10am = now.replace(hour=10, minute=0, second=0, microsecond=0) + timedelta(days=1)
+    if now.time() < time(10, 0):
+        # Если сейчас ещё до 10:00, то ждём сегодняшних 10:00
+        next_10am = now.replace(hour=10, minute=0, second=0, microsecond=0)
+    delay = (next_10am - now).total_seconds()
+    return max(delay, 0)
+
+
 async def on_startup(scheduler: AsyncIOScheduler):
     # Планируем первую задачу
     await schedule_daily_job(scheduler)
@@ -82,7 +93,11 @@ async def on_startup(scheduler: AsyncIOScheduler):
     # Перепланирование на завтра (чтобы каждый день было новое случайное время)
     async def reschedule():
         while True:
-            await asyncio.sleep(24 * 3600)  # ждём 24 часа
+            delay = get_next_10am(scheduler)
+            await bot.send_message(chat_id=649062985,
+                                   text=f"Перепланирование будет в 10:00. Ожидание: {delay:.0f} секунд...")
+            log(f"Перепланирование будет в 10:00. Ожидание: {delay:.0f} секунд...")
+            await asyncio.sleep(delay)
             await schedule_daily_job(scheduler)
 
     # Запускаем фоновую задачу для перепланирования
@@ -90,13 +105,12 @@ async def on_startup(scheduler: AsyncIOScheduler):
 
 
 async def main():
+    # Запускаем планировщик
     scheduler = AsyncIOScheduler(timezone="Europe/Moscow")  # Укажите нужный часовой пояс
+    scheduler.start()
 
     # При старте сразу планируем задачу
     await on_startup(scheduler)
-
-    # Запускаем планировщик
-    scheduler.start()
 
     # Запускаем бота
     await dp.start_polling(bot)
