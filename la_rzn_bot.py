@@ -1,6 +1,7 @@
 import random
 from datetime import datetime, timedelta, time
 from email.policy import default
+from time import daylight
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
@@ -19,15 +20,29 @@ dp = Dispatcher()
 chat_id_slujebka = -1003043852228
 vote_link = "https://burgerkingapp.onelink.me/220f/g4k9umfa"
 short_vote_link = "https://clck.ru/3PHUak"
+bk_instruction_post = "https://t.me/lizaalertryazan/7684/7685"
+
 # -1001635093935 - реальный чат ЛА
 la_chat_id = -1002911410297
 # 7684 - реальная тема с БК голосованием
 bk_thread_id = 4
 reply_message_id = 37
+
 message_text = f"""Для вашего удобства взяли с сайта БК QR-код и ссылку, по которой можно перейти и сразу попасть на страницу с голосованием*
 {short_vote_link}
 
 <i>*Приложение должно быть установлено</i>"""
+daily_message_text = f"""Напоминаем, что <b>голосовать можно каждый день</b>
+Сегодня новый день и новая возможность помочь отряду
+
+<i>Самый энергичный по голосованию регион оденется в отрядную форму!</i>
+
+Ссылка для голосования: {short_vote_link}
+Полная инструкция с видео: {bk_instruction_post}
+
+<i>Мы проголосовали: ** раз</i>
+
+<b>Проголосовал - нажми кнопку (работает раз в день)</b>"""
 
 
 # Проверка, является ли пользователь администратором
@@ -71,8 +86,8 @@ async def handle_errors(event, exception):
 
 async def send_daily_message():
     try:
-        # await bot.send_message(chat_id=la_chat_id, message_thread_id=bk_thread_id,
-        #                        reply_to_message_id=reply_message_id, text=message_text)
+        await bot.send_message(chat_id=la_chat_id, message_thread_id=bk_thread_id,
+                               reply_to_message_id=reply_message_id, text=message_text)
         log("Сообщение отправлено!")
     except Exception as e:
         log(f"Ошибка при отправке сообщения: {e}")
