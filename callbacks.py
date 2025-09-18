@@ -2,11 +2,34 @@ import json
 import os
 from datetime import datetime
 
-from aiogram import Dispatcher, F
+from aiogram import Dispatcher, F, Bot
 from aiogram.types import CallbackQuery
 
+import keyboard
+from bot_logger import log
 
-def register(dp: Dispatcher):
+
+def register(dp: Dispatcher, bot: Bot, short_vote_link, bk_instruction_post, la_chat_id):
+    def generate_daily_message():
+        with open('resources\\vote_count', 'r') as file:
+            vote_count = int(file.read().strip())
+        return f"""Напоминаем, что <b>голосовать можно каждый день</b>
+Сегодня новый день и новая возможность помочь отряду
+
+<u>Самый энергичный по голосованию регион оденется в отрядную форму!</u>
+
+Ссылка для голосования: {short_vote_link}
+Полная инструкция с видео: {bk_instruction_post}
+
+<i>Мы проголосовали: {vote_count} раз(а)</i>
+
+<b>Проголосовал - нажми кнопку (работает раз в день)</b>"""
+
+    async def update_message(message_id: int):
+        await bot.edit_message_caption(chat_id=la_chat_id, message_id=message_id,
+                                       caption=generate_daily_message(), parse_mode='HTML',
+                                       reply_markup=keyboard.get_vote_button_keyboard())
+
     @dp.callback_query(F.data == "user_voted")
     async def handle_vote_callback(callback: CallbackQuery):
         user_id = callback.from_user.id
@@ -52,6 +75,16 @@ def register(dp: Dispatcher):
             f.write(str(count))
 
         await callback.answer("Спасибо за ваш голос!", show_alert=True)
+
+        last_message_id = 0
+        try:
+            with open("resources/last_message_id", "r") as f:
+                last_message_id = int(f.read().strip())
+        except (FileNotFoundError, ValueError):
+            log("Не удаётся найти файл last_message_id")
+            pass
+
+        await update_message(last_message_id)
 
 
 def cleanup_old_voter_data(days_to_keep=7):

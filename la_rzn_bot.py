@@ -36,7 +36,7 @@ message_text = f"""Для вашего удобства взяли с сайта
 
 <i>*Приложение должно быть установлено</i>"""
 
-callbacks.register(dp)
+callbacks.register(dp, bot, short_vote_link, bk_instruction_post, la_chat_id)
 
 
 def generate_daily_message():
