@@ -45,7 +45,7 @@ async def send_daily_message():
 
 def get_random_time_between_11_and_12():
     """Возвращает случайное время между 11:00 и 11:59"""
-    minute = random.randint(0, 59)
+    minute = random.randint(0, 29)
     second = random.randint(0, 59)
     return time(11, minute, second)
 
