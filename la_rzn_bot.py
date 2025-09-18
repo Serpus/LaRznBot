@@ -1,4 +1,5 @@
 import random
+import keyboard
 from datetime import datetime, timedelta, time
 from email.policy import default
 from time import daylight
@@ -32,23 +33,22 @@ message_text = f"""Для вашего удобства взяли с сайта
 {short_vote_link}
 
 <i>*Приложение должно быть установлено</i>"""
-daily_message_text = f"""Напоминаем, что <b>голосовать можно каждый день</b>
+
+
+def generate_daily_message():
+    with open('resources\\vote_count', 'r') as file:
+        vote_count = int(file.read().strip())
+    return f"""Напоминаем, что <b>голосовать можно каждый день</b>
 Сегодня новый день и новая возможность помочь отряду
 
-<i>Самый энергичный по голосованию регион оденется в отрядную форму!</i>
+<u>Самый энергичный по голосованию регион оденется в отрядную форму!</u>
 
 Ссылка для голосования: {short_vote_link}
 Полная инструкция с видео: {bk_instruction_post}
 
-<i>Мы проголосовали: ** раз</i>
+<i>Мы проголосовали: {vote_count} раз(а)</i>
 
 <b>Проголосовал - нажми кнопку (работает раз в день)</b>"""
-
-
-# Проверка, является ли пользователь администратором
-async def is_admin(chat_id, user_id):
-    chat_member = await bot.get_chat_member(chat_id, user_id)
-    return isinstance(chat_member, (ChatMemberAdministrator, ChatMemberOwner))
 
 
 # @dp.message(Command("test"))
@@ -67,7 +67,8 @@ async def answer(message: types.Message):
 async def send_message(message: types.Message):
     sent_message = await bot.send_photo(chat_id=la_chat_id, message_thread_id=bk_thread_id,
                                         photo=types.FSInputFile("resources\\qr.png"),
-                                        caption=message_text, parse_mode="HTML")
+                                        caption=generate_daily_message(), parse_mode="HTML",
+                                        reply_markup=keyboard.get_vote_button_keyboard())
     log(f"ID отправленного сообщения: {sent_message.message_id}")
 
 
