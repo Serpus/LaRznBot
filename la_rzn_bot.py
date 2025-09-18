@@ -1,8 +1,10 @@
 import random
 from datetime import datetime, timedelta, time
+from email.policy import default
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.filters import Command
+from aiogram.filters.command import CommandPatternType
 from aiogram.types import ChatMemberAdministrator, ChatMemberOwner
 from dotenv import load_dotenv
 from bot_logger import log
@@ -15,6 +17,17 @@ load_dotenv()
 bot = Bot(token=os.getenv("API_KEY"))
 dp = Dispatcher()
 chat_id_slujebka = -1003043852228
+vote_link = "https://burgerkingapp.onelink.me/220f/g4k9umfa"
+short_vote_link = "https://clck.ru/3PHUak"
+# -1001635093935 - реальный чат ЛА
+la_chat_id = -1002911410297
+# 7684 - реальная тема с БК голосованием
+bk_thread_id = 4
+reply_message_id = 37
+message_text = f"""Для вашего удобства взяли с сайта БК QR-код и ссылку, по которой можно перейти и сразу попасть на страницу с голосованием*
+{short_vote_link}
+
+<i>*Приложение должно быть установлено</i>"""
 
 
 # Проверка, является ли пользователь администратором
@@ -23,10 +36,32 @@ async def is_admin(chat_id, user_id):
     return isinstance(chat_member, (ChatMemberAdministrator, ChatMemberOwner))
 
 
-@dp.message(Command("test"))
-async def echo(message: types.Message):
+# @dp.message(Command("test"))
+async def test(message: types.Message):
     await message.answer("Тестовое сообщение")
     # await bot.send_message(chat_id=chat_id_slujebka, text="Тестовое сообщение")
+
+
+@dp.message(Command("answer"))
+async def answer(message: types.Message):
+    await bot.send_message(chat_id=la_chat_id, message_thread_id=bk_thread_id,
+                           reply_to_message_id=reply_message_id, text="test")
+
+
+@dp.message(Command("message"))
+async def send_message(message: types.Message):
+    sent_message = await bot.send_photo(chat_id=la_chat_id, message_thread_id=bk_thread_id,
+                                        photo=types.FSInputFile("resources\\qr.png"),
+                                        caption=message_text, parse_mode="HTML")
+    log(f"ID отправленного сообщения: {sent_message.message_id}")
+
+
+@dp.message()
+async def echo(message: types.Message):
+    log(f"Получено сообщение с id {message.message_id}, "
+        f"группа {message.chat.id}, "
+        f"тема {message.message_thread_id} (), "
+        f"от {message.from_user.username}")
 
 
 @dp.error()
@@ -35,9 +70,9 @@ async def handle_errors(event, exception):
 
 
 async def send_daily_message():
-    message = "Привет! Это ежедневное сообщение в случайное время с 11:00 до 12:00!"
     try:
-        await bot.send_message(chat_id=chat_id_slujebka, text=message)
+        # await bot.send_message(chat_id=la_chat_id, message_thread_id=bk_thread_id,
+        #                        reply_to_message_id=reply_message_id, text=message_text)
         log("Сообщение отправлено!")
     except Exception as e:
         log(f"Ошибка при отправке сообщения: {e}")
@@ -94,8 +129,8 @@ async def on_startup(scheduler: AsyncIOScheduler):
     async def reschedule():
         while True:
             delay = get_next_10am(scheduler)
-            await bot.send_message(chat_id=649062985,
-                                   text=f"Перепланирование будет в 10:00. Ожидание: {delay:.0f} секунд...")
+            # await bot.send_message(chat_id=649062985,
+            #                        text=f"Перепланирование будет в 10:00. Ожидание: {delay:.0f} секунд...")
             log(f"Перепланирование будет в 10:00. Ожидание: {delay:.0f} секунд...")
             await asyncio.sleep(delay)
             await schedule_daily_job(scheduler)
