@@ -22,9 +22,9 @@ dp = Dispatcher()
 
 message_text = f"""Для вашего удобства взяли с сайта БК QR-код и ссылку, по которой можно перейти и сразу попасть на страницу с голосованием*
 {params.short_vote_link}
+По вопросам: @Serpus1
 
-<i>*Приложение должно быть установлено</i>
-По вопросам: @Serpus1"""
+<i>*Приложение должно быть установлено</i>"""
 
 callbacks.register(dp, bot)
 
@@ -35,16 +35,18 @@ async def test(message: types.Message):
     # await bot.send_message(chat_id=chat_id_slujebka, text="Тестовое сообщение")
 
 
-@dp.message(Command("message"))
+# @dp.message(Command("message"))
 async def send_message(message: types.Message):
     sent_message = await bot.send_photo(chat_id=params.la_chat_id, message_thread_id=params.bk_thread_id,
                                         photo=types.FSInputFile("resources\\qr.png"),
                                         caption=message_text, parse_mode="HTML")
     log(f"ID отправленного сообщения: {sent_message.message_id}")
+    params.set_reply_message_id(sent_message.message_id)
+    params.set_last_message_id(0)
 
 
-@dp.message(Command("daily"))
-async def send_message(message: types.Message):
+# @dp.message(Command("daily"))
+async def daily(message: types.Message):
     message_id = params.get_last_message_id()
     if message_id != 0:
         await bot.delete_message(chat_id=params.la_chat_id, message_id=message_id)
@@ -72,8 +74,16 @@ async def handle_errors(error: ErrorEvent):
 
 async def send_daily_message():
     try:
-
-        log("Сообщение отправлено!")
+        message_id = params.get_last_message_id()
+        if message_id != 0:
+            await bot.delete_message(chat_id=params.la_chat_id, message_id=message_id)
+        sent_message = await bot.send_photo(chat_id=params.la_chat_id, message_thread_id=params.bk_thread_id,
+                                            photo=types.FSInputFile("resources\\qr.png"),
+                                            caption=params.generate_daily_message(), parse_mode="HTML",
+                                            reply_to_message_id=params.get_reply_message_id(),
+                                            reply_markup=keyboard.get_vote_button_keyboard())
+        log(f"ID отправленного сообщения: {sent_message.message_id}")
+        params.set_last_message_id(sent_message.message_id)
     except Exception as e:
         log(f"Ошибка при отправке сообщения: {e}")
 
@@ -129,8 +139,8 @@ async def on_startup(scheduler: AsyncIOScheduler):
     async def reschedule():
         while True:
             delay = get_next_10am(scheduler)
-            # await bot.send_message(chat_id=649062985,
-            #                        text=f"Перепланирование будет в 10:00. Ожидание: {delay:.0f} секунд...")
+            await bot.send_message(chat_id=649062985,
+                                   text=f"Перепланирование будет в 10:00. Ожидание: {delay:.0f} секунд...")
             log(f"Перепланирование будет в 10:00. Ожидание: {delay:.0f} секунд...")
             await asyncio.sleep(delay)
             await schedule_daily_job(scheduler)

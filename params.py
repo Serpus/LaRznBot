@@ -55,3 +55,11 @@ def set_last_message_id(value):
             f.write(str(value))
     except (FileNotFoundError, ValueError):
         log("Не удаётся записать значение в файл last_message_id")
+
+
+def set_reply_message_id(value):
+    try:
+        with open("resources\\reply_message_id", "w") as f:
+            f.write(str(value))
+    except (FileNotFoundError, ValueError):
+        log("Не удаётся записать значение в файл reply_message_id")
