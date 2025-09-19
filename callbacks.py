@@ -34,6 +34,7 @@ def register(dp: Dispatcher, bot: Bot):
     @dp.callback_query(F.data == "user_voted")
     async def handle_vote_callback(callback: CallbackQuery):
         user_id = callback.from_user.id
+        log(f"{user_id} - нажал на кнопку голосования")
         current_date = datetime.now().strftime("%Y-%m-%d")
         count = 0
 
@@ -52,6 +53,7 @@ def register(dp: Dispatcher, bot: Bot):
         if current_date in voters_data:
             if str(user_id) in voters_data[current_date]:
                 await callback.answer("Ты уже голосовал сегодня! Ждём твой голос завтра!", show_alert=True)
+                log(f"{user_id} - уже голосовал")
                 return
         else:
             voters_data[current_date] = []
@@ -75,7 +77,8 @@ def register(dp: Dispatcher, bot: Bot):
         with open(vote_count_file, "w") as f:
             f.write(str(count))
 
-        await callback.answer("Спасибо за твой голос!", show_alert=True)
+        await callback.answer("Спасибо за твой голос! Приходи голосовать завтра =)", show_alert=True)
+        log(f"{user_id} - голос засчитан")
 
         await update_message(params.get_last_message_id())
 
