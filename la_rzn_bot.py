@@ -38,7 +38,7 @@ async def test(message: types.Message):
 # @dp.message(Command("message"))
 async def send_message(message: types.Message):
     sent_message = await bot.send_photo(chat_id=params.la_chat_id, message_thread_id=params.bk_thread_id,
-                                        photo=types.FSInputFile("resources\\qr.png"),
+                                        photo=types.FSInputFile("resources/qr.png"),
                                         caption=message_text, parse_mode="HTML")
     log(f"ID отправленного сообщения: {sent_message.message_id}")
     params.set_reply_message_id(sent_message.message_id)
@@ -53,7 +53,7 @@ async def daily(message: types.Message):
             if message_id != 0:
                 await bot.delete_message(chat_id=params.la_chat_id, message_id=message_id)
             sent_message = await bot.send_photo(chat_id=params.la_chat_id, message_thread_id=params.bk_thread_id,
-                                                photo=types.FSInputFile("resources\\qr.png"),
+                                                photo=types.FSInputFile("resources/qr.png"),
                                                 caption=params.generate_daily_message(), parse_mode="HTML",
                                                 reply_to_message_id=params.get_reply_message_id(),
                                                 reply_markup=keyboard.get_vote_button_keyboard())
@@ -82,7 +82,7 @@ async def send_daily_message():
         if message_id != 0:
             await bot.delete_message(chat_id=params.la_chat_id, message_id=message_id)
         sent_message = await bot.send_photo(chat_id=params.la_chat_id, message_thread_id=params.bk_thread_id,
-                                            photo=types.FSInputFile("resources\\qr.png"),
+                                            photo=types.FSInputFile("resources/qr.png"),
                                             caption=params.generate_daily_message(), parse_mode="HTML",
                                             reply_to_message_id=params.get_reply_message_id(),
                                             reply_markup=keyboard.get_vote_button_keyboard())
