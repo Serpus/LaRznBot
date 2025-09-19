@@ -1,6 +1,7 @@
 import json
 import os
 from datetime import datetime
+import params
 
 from aiogram import Dispatcher, F, Bot
 from aiogram.types import CallbackQuery
@@ -9,7 +10,7 @@ import keyboard
 from bot_logger import log
 
 
-def register(dp: Dispatcher, bot: Bot, short_vote_link, bk_instruction_post, la_chat_id):
+def register(dp: Dispatcher, bot: Bot):
     def generate_daily_message():
         with open('resources\\vote_count', 'r') as file:
             vote_count = int(file.read().strip())
@@ -18,15 +19,15 @@ def register(dp: Dispatcher, bot: Bot, short_vote_link, bk_instruction_post, la_
 
 <u>Самый энергичный по голосованию регион оденется в отрядную форму!</u>
 
-Ссылка для голосования: {short_vote_link}
-Полная инструкция с видео: {bk_instruction_post}
+Ссылка для голосования: {params.short_vote_link}
+Полная инструкция с видео: {params.bk_instruction_post}
 
 <i>Мы проголосовали: {vote_count} раз(а)</i>
 
 <b>Проголосовал - нажми кнопку (работает раз в день)</b>"""
 
     async def update_message(message_id: int):
-        await bot.edit_message_caption(chat_id=la_chat_id, message_id=message_id,
+        await bot.edit_message_caption(chat_id=params.la_chat_id, message_id=message_id,
                                        caption=generate_daily_message(), parse_mode='HTML',
                                        reply_markup=keyboard.get_vote_button_keyboard())
 
@@ -50,7 +51,7 @@ def register(dp: Dispatcher, bot: Bot, short_vote_link, bk_instruction_post, la_
         # Проверяем, голосовал ли пользователь сегодня
         if current_date in voters_data:
             if str(user_id) in voters_data[current_date]:
-                await callback.answer("Вы уже голосовали сегодня! Повторная попытка завтра.", show_alert=True)
+                await callback.answer("Ты уже голосовал сегодня! Ждём твой голос завтра!", show_alert=True)
                 return
         else:
             voters_data[current_date] = []
@@ -74,17 +75,9 @@ def register(dp: Dispatcher, bot: Bot, short_vote_link, bk_instruction_post, la_
         with open(vote_count_file, "w") as f:
             f.write(str(count))
 
-        await callback.answer("Спасибо за ваш голос!", show_alert=True)
+        await callback.answer("Спасибо за твой голос!", show_alert=True)
 
-        last_message_id = 0
-        try:
-            with open("resources/last_message_id", "r") as f:
-                last_message_id = int(f.read().strip())
-        except (FileNotFoundError, ValueError):
-            log("Не удаётся найти файл last_message_id")
-            pass
-
-        await update_message(last_message_id)
+        await update_message(params.get_last_message_id())
 
 
 def cleanup_old_voter_data(days_to_keep=7):
