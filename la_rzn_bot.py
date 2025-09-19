@@ -140,7 +140,7 @@ async def on_startup(scheduler: AsyncIOScheduler):
             await bot.send_message(chat_id=649062985,
                                    text=f"Перепланирование будет в 10:00. Ожидание: {delay:.0f} секунд...")
             log(f"Перепланирeование будет в 10:00. Ожидание: {delay:.0f} секунд...")
-            await asyncio.slep(delay)
+            await asyncio.sleep(delay)
             await schedule_daily_job(scheduler)
 
     # Запускаем фоновую задачу для перепланирования
