@@ -6,9 +6,7 @@ from datetime import datetime, timedelta, time
 import params
 
 from aiogram import Bot, Dispatcher, types
-from aiogram.filters import Command
-from aiogram.filters.command import CommandPatternType
-from aiogram.types import ChatMemberAdministrator, ChatMemberOwner, ErrorEvent
+from aiogram.types import ErrorEvent
 from dotenv import load_dotenv
 from bot_logger import log
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -141,8 +139,8 @@ async def on_startup(scheduler: AsyncIOScheduler):
             delay = get_next_10am(scheduler)
             await bot.send_message(chat_id=649062985,
                                    text=f"Перепланирование будет в 10:00. Ожидание: {delay:.0f} секунд...")
-            log(f"Перепланирование будет в 10:00. Ожидание: {delay:.0f} секунд...")
-            await asyncio.sleep(delay)
+            log(f"Перепланирeование будет в 10:00. Ожидание: {delay:.0f} секунд...")
+            await asyncio.slep(delay)
             await schedule_daily_job(scheduler)
 
     # Запускаем фоновую задачу для перепланирования

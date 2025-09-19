@@ -6,9 +6,11 @@ short_vote_link = "https://clck.ru/3PHUak"
 bk_instruction_post = "https://t.me/lizaalertryazan/7684/7685"
 
 # -1001635093935 - реальный чат ЛА
-la_chat_id = -1002911410297
+# -1002911410297 - тестовый чат
+la_chat_id = -1001635093935
 # 7684 - реальная тема с БК голосованием
-bk_thread_id = 4
+# 4 - тестовая тема
+bk_thread_id = 7684
 
 
 def generate_daily_message():
