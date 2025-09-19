@@ -1,5 +1,7 @@
 import random
 
+from aiogram.filters import Command
+
 import callbacks
 import keyboard
 from datetime import datetime, timedelta, time
