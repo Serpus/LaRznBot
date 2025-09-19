@@ -12,7 +12,7 @@ from bot_logger import log
 
 def register(dp: Dispatcher, bot: Bot):
     def generate_daily_message():
-        with open('resources\\vote_count', 'r') as file:
+        with open('resources/vote_count', 'r') as file:
             vote_count = int(file.read().strip())
         return f"""Напоминаем, что <b>голосовать можно каждый день</b>
 Сегодня новый день и новая возможность помочь отряду

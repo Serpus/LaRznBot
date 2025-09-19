@@ -29,7 +29,7 @@ def generate_daily_message():
 
 def get_reply_message_id():
     try:
-        with open("resources\\reply_message_id", "r") as f:
+        with open("resources/reply_message_id", "r") as f:
             return int(f.read().strip())
     except (FileNotFoundError, ValueError):
         log("Не удаётся найти файл reply_message_id")
@@ -37,7 +37,7 @@ def get_reply_message_id():
 
 def get_vote_count():
     try:
-        with open("resources\\vote_count", "r") as f:
+        with open("resources/vote_count", "r") as f:
             return int(f.read().strip())
     except (FileNotFoundError, ValueError):
         log("Не удаётся найти файл vote_count")
@@ -45,7 +45,7 @@ def get_vote_count():
 
 def get_last_message_id():
     try:
-        with open("resources\\last_message_id", "r") as f:
+        with open("resources/last_message_id", "r") as f:
             return int(f.read().strip())
     except (FileNotFoundError, ValueError):
         log("Не удаётся найти файл last_message_id")
@@ -53,7 +53,7 @@ def get_last_message_id():
 
 def set_last_message_id(value):
     try:
-        with open("resources\\last_message_id", "w") as f:
+        with open("resources/last_message_id", "w") as f:
             f.write(str(value))
     except (FileNotFoundError, ValueError):
         log("Не удаётся записать значение в файл last_message_id")
@@ -61,7 +61,7 @@ def set_last_message_id(value):
 
 def set_reply_message_id(value):
     try:
-        with open("resources\\reply_message_id", "w") as f:
+        with open("resources/reply_message_id", "w") as f:
             f.write(str(value))
     except (FileNotFoundError, ValueError):
         log("Не удаётся записать значение в файл reply_message_id")
