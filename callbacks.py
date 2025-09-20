@@ -11,24 +11,10 @@ from bot_logger import log
 
 
 def register(dp: Dispatcher, bot: Bot):
-    def generate_daily_message():
-        with open('resources/vote_count', 'r') as file:
-            vote_count = int(file.read().strip())
-        return f"""Напоминаем, что <b>голосовать можно каждый день</b>
-Сегодня новый день и новая возможность помочь отряду
-
-<u>Самый энергичный по голосованию регион оденется в отрядную форму!</u>
-
-Ссылка для голосования: {params.short_vote_link}
-Полная инструкция с видео: {params.bk_instruction_post}
-
-<i>Мы проголосовали: {vote_count} раз(а)</i>
-
-<b>Проголосовал - нажми кнопку (работает раз в день)</b>"""
 
     async def update_message(message_id: int):
         await bot.edit_message_caption(chat_id=params.la_chat_id, message_id=message_id,
-                                       caption=generate_daily_message(), parse_mode='HTML',
+                                       caption=params.generate_daily_message(), parse_mode='HTML',
                                        reply_markup=keyboard.get_vote_button_keyboard())
 
     @dp.callback_query(F.data == "user_voted")
