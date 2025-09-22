@@ -7,6 +7,7 @@ import callbacks
 import keyboard
 from datetime import datetime, timedelta, time
 import params
+import db
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import ErrorEvent
@@ -169,18 +170,18 @@ async def handle_errors(error: ErrorEvent):
     log(f"Ошибка: {error}")
 
 
-async def send_daily_message():
+async def send_daily_message(chat_id):
     try:
-        message_id = params.get_last_message_id()
+        message_id = params.get_last_message_id(chat_id)
         if message_id != 0:
-            await bot.delete_message(chat_id=params.la_chat_id, message_id=message_id)
-        sent_message = await bot.send_photo(chat_id=params.la_chat_id, message_thread_id=params.bk_thread_id,
+            await bot.delete_message(chat_id=chat_id, message_id=message_id)
+        sent_message = await bot.send_photo(chat_id=chat_id, message_thread_id=params.bk_thread_id,
                                             photo=types.FSInputFile("resources/image.jpg"),
-                                            caption=params.generate_daily_message(), parse_mode="HTML",
-                                            reply_to_message_id=params.get_reply_message_id(),
+                                            caption=params.generate_daily_message(chat_id), parse_mode="HTML",
+                                            reply_to_message_id=params.get_reply_message_id(chat_id),
                                             reply_markup=keyboard.get_vote_button_keyboard())
         log(f"ID отправленного сообщения: {sent_message.message_id}")
-        params.set_last_message_id(sent_message.message_id)
+        params.set_last_message_id(chat_id, sent_message.message_id)
     except Exception as e:
         log(f"Ошибка при отправке сообщения: {e}")
 
