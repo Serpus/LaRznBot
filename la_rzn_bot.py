@@ -72,6 +72,8 @@ async def count_voters_per_day(message: types.Message):
     - С аргументом YYYY-MM: детальная статистика по дням указанного месяца + итог.
     Пример: /stats 2025-03
     """
+    if message.chat.id != 649062985:
+        return
     filename = "resources/voters.json"
 
     # Извлекаем аргумент (месяц)
