@@ -1,3 +1,4 @@
+import json
 import random
 
 from aiogram.filters import Command
@@ -61,6 +62,86 @@ async def daily(message: types.Message):
             params.set_last_message_id(sent_message.message_id)
         except Exception as e:
             log(f"Ошибка при отправке сообщения: {e}")
+
+
+@dp.message(Command("stats_month"))
+async def count_voters_per_day(message: types.Message):
+    """
+    Читает файл voters.json и выводит количество проголосовавших за каждый день.
+    При указании месяца в формате YYYY-MM — фильтрует по нему.
+    Пример: /stats_month 2025-03
+    """
+    filename = "resources/voters.json"
+
+    # Извлекаем аргумент (месяц)
+    args = message.text.strip().split()
+    target_month = args[1] if len(args) > 1 else None
+
+    # Проверка формата месяца
+    if target_month and not (len(target_month) == 7 and target_month[4] == '-'):
+        await message.answer(
+            "❌ Неверный формат месяца. Используйте: <code>YYYY-MM</code>, например <code>2025-03</code>.",
+            parse_mode="HTML")
+        return
+
+    try:
+        with open(filename, 'r', encoding='utf-8') as file:
+            data = json.load(file)
+    except FileNotFoundError:
+        log(f"Ошибка: файл '{filename}' не найден.")
+        await message.answer(f"❌ Файл '{filename}' не найден.")
+        return
+    except json.JSONDecodeError as e:
+        log(f"Ошибка при чтении JSON: {e}")
+        await message.answer("❌ Ошибка чтения данных. Файл повреждён.")
+        return
+
+    total_count_all = 0
+    days_processed = 0
+    sent_any_message = False
+
+    # Сортируем даты по хронологии
+    sorted_dates = sorted(data.keys())
+
+    for date in sorted_dates:
+        # Проверяем формат даты: ожидается YYYY-MM-DD
+        if len(date) != 10 or date[4] != '-' or date[7] != '-':
+            continue  # пропускаем некорректные даты
+
+        year_month = date[:7]  # YYYY-MM
+
+        # Фильтрация по месяцу, если задан
+        if target_month and year_month != target_month:
+            continue
+
+        ids = data[date]
+        if isinstance(ids, list):
+            unique_ids = set(ids)
+            count = len(unique_ids)
+            total_count_all += count
+            days_processed += 1
+
+            # Отправляем информацию по дням
+            stat_text = f"<b>{date}</b>: {count} человек"
+            # await message.answer(stat_text, parse_mode="HTML")
+            sent_any_message = True
+        else:
+            log(f"{date}: данные повреждены (не список)")
+
+    # Итоговая статистика
+    if not sent_any_message:
+        if target_month:
+            await message.answer(f"📅 За месяц <b>{target_month}</b> нет данных о голосованиях.", parse_mode="HTML")
+        else:
+            await message.answer("📂 Нет данных о голосованиях.")
+    else:
+        period = f"месяц <b>{target_month}</b>" if target_month else "все время"
+        summary = (
+            f"\n📊 <b>Итого за {period}:</b>\n"
+            f"• Дней: {days_processed}\n"
+            f"• Всего уникальных голосов: {total_count_all}"
+        )
+        await message.answer(summary, parse_mode="HTML")
 
 
 @dp.message()
