@@ -55,6 +55,8 @@ async def daily(message: types.Message):
 
 @dp.message(Command("all_stats"))
 async def count_voters_per_day(message: types.Message):
+    if message.chat.id not in (649062985, -2869358118):
+        return
     # Получаем аргументы команды
     command_parts = message.text.split()
     date_filter = command_parts[1] if len(command_parts) > 1 else None
@@ -115,6 +117,8 @@ async def count_voters_per_day(message: types.Message):
 
 @dp.message(Command("all_stats_day"))
 async def all_stats_day(message: types.Message):
+    if message.chat.id not in (649062985, -2869358118):
+        return
     # Получаем аргументы команды
     command_parts = message.text.split()
 
