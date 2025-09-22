@@ -50,19 +50,7 @@ async def send_message(message: types.Message):
 @dp.message(Command("daily"))
 async def daily(message: types.Message):
     if message.chat.id == 649062985:
-        try:
-            message_id = params.get_last_message_id()
-            if message_id != 0:
-                await bot.delete_message(chat_id=params.la_chat_id, message_id=message_id)
-            sent_message = await bot.send_photo(chat_id=params.la_chat_id, message_thread_id=params.bk_thread_id,
-                                                photo=types.FSInputFile("resources/image.jpg"),
-                                                caption=params.generate_daily_message(), parse_mode="HTML",
-                                                reply_to_message_id=params.get_reply_message_id(),
-                                                reply_markup=keyboard.get_vote_button_keyboard())
-            log(f"ID отправленного сообщения: {sent_message.message_id}")
-            params.set_last_message_id(sent_message.message_id)
-        except Exception as e:
-            log(f"Ошибка при отправке сообщения: {e}")
+        await send_daily_message()
 
 
 @dp.message(Command("stats"))
@@ -170,20 +158,33 @@ async def handle_errors(error: ErrorEvent):
     log(f"Ошибка: {error}")
 
 
-async def send_daily_message(chat_id):
-    try:
-        message_id = params.get_last_message_id(chat_id)
-        if message_id != 0:
-            await bot.delete_message(chat_id=chat_id, message_id=message_id)
-        sent_message = await bot.send_photo(chat_id=chat_id, message_thread_id=params.bk_thread_id,
-                                            photo=types.FSInputFile("resources/image.jpg"),
-                                            caption=params.generate_daily_message(chat_id), parse_mode="HTML",
-                                            reply_to_message_id=params.get_reply_message_id(chat_id),
-                                            reply_markup=keyboard.get_vote_button_keyboard())
-        log(f"ID отправленного сообщения: {sent_message.message_id}")
-        params.set_last_message_id(chat_id, sent_message.message_id)
-    except Exception as e:
-        log(f"Ошибка при отправке сообщения: {e}")
+async def send_daily_message():
+    for row in db.get_chats():
+        chat_id = row.get("chat_id")
+        try:
+            message_id = params.get_last_message_id(chat_id)
+            if message_id is not None:
+                await bot.delete_message(chat_id=chat_id, message_id=message_id)
+        except Exception as e:
+            log(f"Ошибка при удалении сообщения: {e}")
+        try:
+            thread_id = db.get_thread_id(chat_id)
+            if chat_id == -1001635093935:
+                daily_message = params.generate_old_daily_message(chat_id)
+            else:
+                daily_message = params.generate_daily_message(chat_id)
+            reply_message_id = params.get_reply_message_id(chat_id)
+            button_keyboard = keyboard.get_vote_button_keyboard()
+            sent_message = await bot.send_photo(chat_id=chat_id,
+                                                message_thread_id=thread_id,
+                                                photo=types.FSInputFile("resources/image.jpg"),
+                                                caption=daily_message, parse_mode="HTML",
+                                                reply_to_message_id=reply_message_id,
+                                                reply_markup=button_keyboard)
+            log(f"chat_id {chat_id}: ID отправленного сообщения: {sent_message.message_id}")
+            params.set_last_message_id(chat_id, sent_message.message_id)
+        except Exception as e:
+            log(f"Ошибка при отправке сообщения: {e}")
 
 
 def get_random_time_between_11_and_12():
@@ -239,7 +240,7 @@ async def on_startup(scheduler: AsyncIOScheduler):
             delay = get_next_10am(scheduler)
             await bot.send_message(chat_id=649062985,
                                    text=f"Перепланирование будет в 10:00. Ожидание: {delay:.0f} секунд...")
-            log(f"Перепланирeование будет в 10:00. Ожидание: {delay:.0f} секунд...")
+            log(f"Перепланирование будет в 10:00. Ожидание: {delay:.0f} секунд...")
             await asyncio.sleep(delay)
             await schedule_daily_job(scheduler)
 

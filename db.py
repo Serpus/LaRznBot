@@ -56,11 +56,11 @@ def update_data(update_query: str):
     Returns:
         int: Количество измененных строк
     """
+    log(f"Обновляем данные: {update_query}")
     try:
         with sqlite3.connect(db_name) as connect:
             cursor = connect.cursor()
             cursor.execute(update_query)
-
             connect.commit()
             return cursor.rowcount  # Возвращает количество измененных строк
 
@@ -74,3 +74,10 @@ def add_voter(user_id, chat_id, user_name, user_login, vote_date):
     update_data(
         f"INSERT INTO voters (user_id, chat_id, user_name, user_login, vote_date) "
         f"VALUES ({user_id}, {chat_id}, '{user_name}', '{user_login}', '{vote_date}')")
+
+
+def get_thread_id(chat_id):
+    return get_data_from_db_first_row(f"select thread_id from region_chats where chat_id = {chat_id}").get("thread_id")
+
+def get_chats():
+    return get_data_from_db("select chat_id from region_chats")
