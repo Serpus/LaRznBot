@@ -64,12 +64,13 @@ async def daily(message: types.Message):
             log(f"Ошибка при отправке сообщения: {e}")
 
 
-@dp.message(Command("stats_month"))
+@dp.message(Command("stats"))
 async def count_voters_per_day(message: types.Message):
     """
-    Читает файл voters.json и выводит количество проголосовавших за каждый день.
-    При указании месяца в формате YYYY-MM — фильтрует по нему.
-    Пример: /stats_month 2025-03
+    Читает файл voters.json и выводит статистику.
+    - Без аргументов: общее количество голосов за всё время (без детализации по дням).
+    - С аргументом YYYY-MM: детальная статистика по дням указанного месяца + итог.
+    Пример: /stats 2025-03
     """
     filename = "resources/voters.json"
 
@@ -121,27 +122,36 @@ async def count_voters_per_day(message: types.Message):
             total_count_all += count
             days_processed += 1
 
-            # Отправляем информацию по дням
-            stat_text = f"<b>{date}</b>: {count} человек"
-            # await message.answer(stat_text, parse_mode="HTML")
-            sent_any_message = True
+            # Отправляем информацию по дням ТОЛЬКО если указан месяц
+            if target_month:
+                stat_text = f"<b>{date}</b>: {count} человек"
+                await message.answer(stat_text, parse_mode="HTML")
+                sent_any_message = True
         else:
             log(f"{date}: данные повреждены (не список)")
 
-    # Итоговая статистика
-    if not sent_any_message:
-        if target_month:
+    # Вывод итоговой статистики
+    if target_month:
+        if days_processed == 0:
             await message.answer(f"📅 За месяц <b>{target_month}</b> нет данных о голосованиях.", parse_mode="HTML")
         else:
-            await message.answer("📂 Нет данных о голосованиях.")
+            summary = (
+                f"\n📊 <b>Итого за месяц {target_month}:</b>\n"
+                f"• Дней с голосами: {days_processed}\n"
+                f"• Всего уникальных голосов: {total_count_all}"
+            )
+            await message.answer(summary, parse_mode="HTML")
     else:
-        period = f"месяц <b>{target_month}</b>" if target_month else "все время"
-        summary = (
-            f"\n📊 <b>Итого за {period}:</b>\n"
-            f"• Дней: {days_processed}\n"
-            f"• Всего уникальных голосов: {total_count_all}"
-        )
-        await message.answer(summary, parse_mode="HTML")
+        # Если месяц не указан — просто общий итог
+        if total_count_all == 0:
+            await message.answer("📂 Нет данных о голосованиях за всё время.")
+        else:
+            summary = (
+                f"📊 <b>Общая статистика за всё время:</b>\n"
+                f"• Дней с голосами: {days_processed}\n"
+                f"• Всего уникальных голосов: {total_count_all}"
+            )
+            await message.answer(summary, parse_mode="HTML")
 
 
 @dp.message()
