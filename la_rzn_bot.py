@@ -113,6 +113,80 @@ async def count_voters_per_day(message: types.Message):
         print(f"Ошибка: {e}")
 
 
+@dp.message(Command("all_stats_day"))
+async def all_stats_day(message: types.Message):
+    # Получаем аргументы команды
+    command_parts = message.text.split()
+
+    # Проверяем, передан ли аргумент
+    if len(command_parts) < 2:
+        await message.answer("Пожалуйста, укажите дату в формате YYYY-MM.")
+        return
+
+    date_filter = command_parts[1]
+
+    # Проверяем формат YYYY-MM
+    try:
+        year, month = map(int, date_filter.split('-'))
+        if not (1 <= month <= 12):
+            raise ValueError("Неверный месяц")
+    except ValueError:
+        await message.answer("Неверный формат даты. Используйте YYYY-MM.")
+        return
+
+    # Определяем первый и последний день месяца
+    import calendar
+    last_day = calendar.monthrange(year, month)[1]
+    start_date = f"{year}-{month:02d}-01"
+    end_date = f"{year}-{month:02d}-{last_day}"
+
+    # Запрос: считаем количество голосов по дням и чатам
+    query = """
+    SELECT 
+        v.vote_date,
+        v.chat_id,
+        r.region_name,
+        COUNT(*) as vote_count
+    FROM voters v
+    JOIN region_chats r ON r.chat_id = v.chat_id
+    WHERE v.vote_date >= ? AND v.vote_date <= ?
+    GROUP BY v.vote_date, v.chat_id
+    ORDER BY v.vote_date, vote_count DESC;
+    """
+
+    try:
+        results = db.get_data_from_db_params(query, [start_date, end_date])
+
+        # Формируем ответ
+        if not results:
+            await message.answer(f"Нет данных за период {date_filter}.")
+        else:
+            # Группируем данные по дням
+            from collections import defaultdict
+            daily_stats = defaultdict(list)
+
+            for row in results:
+                vote_date = row.get("vote_date")
+                region_name = row.get("region_name")
+                vote_count = row.get("vote_count")
+                daily_stats[vote_date].append((region_name, vote_count))
+
+            # Формируем текст ответа
+            response_lines = [f"📊 Статистика по дням за {date_filter}:"]
+
+            for vote_date in sorted(daily_stats.keys()):
+                response_lines.append(f"\n📅 {vote_date}:")
+                for region_name, vote_count in daily_stats[vote_date]:
+                    response_lines.append(f"  💬 {region_name}: {vote_count} голоса(-ов)")
+
+            result_text = "\n".join(response_lines)
+            await message.answer(result_text)
+
+    except Exception as e:
+        await message.answer("Произошла ошибка при получении статистики.")
+        print(f"Ошибка: {e}")
+
+
 @dp.message()
 async def echo(message: types.Message):
     log(f"Получено сообщение с id {message.message_id}, "
