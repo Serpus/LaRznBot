@@ -140,7 +140,7 @@ async def count_voters_per_day(message: types.Message):
             summary = (
                 f"\n📊 <b>Итого за месяц {target_month}:</b>\n"
                 f"• Дней с голосами: {days_processed}\n"
-                f"• Всего уникальных голосов: {total_count_all}"
+                f"• Всего голосов: {total_count_all}"
             )
             await message.answer(summary, parse_mode="HTML")
     else:
@@ -151,7 +151,7 @@ async def count_voters_per_day(message: types.Message):
             summary = (
                 f"📊 <b>Общая статистика за всё время:</b>\n"
                 f"• Дней с голосами: {days_processed}\n"
-                f"• Всего уникальных голосов: {total_count_all}"
+                f"• Всего голосов: {total_count_all}"
             )
             await message.answer(summary, parse_mode="HTML")
 
