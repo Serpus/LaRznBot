@@ -25,6 +25,27 @@ def get_data_from_db(select: str):
     return result
 
 
+def get_data_from_db_params(select: str, params):
+    connect = sqlite3.connect(db_name)
+    cursor = connect.cursor()
+
+    log(f"Выполняем селект: {select}")
+    cursor.execute(select, params)
+    data = cursor.fetchall()
+
+    # Получаем названия столбцов
+    column_names = [description[0] for description in cursor.description]
+
+    # Преобразуем данные в список словарей
+    result = []
+    for row in data:
+        result.append(dict(zip(column_names, row)))
+
+    connect.close()
+    log(f"{result}")
+    return result
+
+
 def get_data_from_db_first_row(select: str):
     """Возвращает первую строку как словарь {название_столбца: значение}"""
     with sqlite3.connect(db_name) as connect:

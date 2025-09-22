@@ -53,96 +53,64 @@ async def daily(message: types.Message):
         await send_daily_message()
 
 
-@dp.message(Command("stats"))
+@dp.message(Command("all_stats"))
 async def count_voters_per_day(message: types.Message):
-    """
-    Читает файл voters.json и выводит статистику.
-    - Без аргументов: общее количество голосов за всё время (без детализации по дням).
-    - С аргументом YYYY-MM: детальная статистика по дням указанного месяца + итог.
-    Пример: /stats 2025-03
-    """
-    if message.chat.id != 649062985:
-        return
-    filename = "resources/voters.json"
+    # Получаем аргументы команды
+    command_parts = message.text.split()
+    date_filter = command_parts[1] if len(command_parts) > 1 else None
 
-    # Извлекаем аргумент (месяц)
-    args = message.text.strip().split()
-    target_month = args[1] if len(args) > 1 else None
+    # Формируем условие WHERE
+    if date_filter:
+        # Проверяем формат YYYY-MM
+        try:
+            year, month = map(int, date_filter.split('-'))
+            # Формируем диапазон дат для месяца
+            start_date = f"{year}-{month:02d}-01"
+            end_date = f"{year}-{month:02d}-31"
+            where_clause = f"WHERE vote_date >= ? AND vote_date <= ?"
+            parameters = [start_date, end_date]
+        except ValueError:
+            await message.answer("Неверный формат даты. Используйте YYYY-MM.")
+            return
+    else:
+        where_clause = ""
+        parameters = []
 
-    # Проверка формата месяца
-    if target_month and not (len(target_month) == 7 and target_month[4] == '-'):
-        await message.answer(
-            "❌ Неверный формат месяца. Используйте: <code>YYYY-MM</code>, например <code>2025-03</code>.",
-            parse_mode="HTML")
-        return
+    # Запрос: считаем количество голосов по chat_id
+    query = f"""
+    SELECT 
+        v.chat_id,
+        r.region_name,
+        COUNT(*) as vote_count
+    FROM voters v
+    JOIN region_chats r on r.chat_id = v.chat_id
+    {where_clause}
+    GROUP BY v.chat_id
+    ORDER BY vote_count DESC;
+    """
 
     try:
-        with open(filename, 'r', encoding='utf-8') as file:
-            data = json.load(file)
-    except FileNotFoundError:
-        log(f"Ошибка: файл '{filename}' не найден.")
-        await message.answer(f"❌ Файл '{filename}' не найден.")
-        return
-    except json.JSONDecodeError as e:
-        log(f"Ошибка при чтении JSON: {e}")
-        await message.answer("❌ Ошибка чтения данных. Файл повреждён.")
-        return
+        results = db.get_data_from_db_params(query, parameters)
 
-    total_count_all = 0
-    days_processed = 0
-    sent_any_message = False
-
-    # Сортируем даты по хронологии
-    sorted_dates = sorted(data.keys())
-
-    for date in sorted_dates:
-        # Проверяем формат даты: ожидается YYYY-MM-DD
-        if len(date) != 10 or date[4] != '-' or date[7] != '-':
-            continue  # пропускаем некорректные даты
-
-        year_month = date[:7]  # YYYY-MM
-
-        # Фильтрация по месяцу, если задан
-        if target_month and year_month != target_month:
-            continue
-
-        ids = data[date]
-        if isinstance(ids, list):
-            unique_ids = set(ids)
-            count = len(unique_ids)
-            total_count_all += count
-            days_processed += 1
-
-            # Отправляем информацию по дням ТОЛЬКО если указан месяц
-            if target_month:
-                stat_text = f"<b>{date}</b>: {count} человек"
-                await message.answer(stat_text, parse_mode="HTML")
-                sent_any_message = True
+        # Формируем ответ
+        if not results:
+            await message.answer("Нет данных за выбранный период.")
         else:
-            log(f"{date}: данные повреждены (не список)")
+            response_lines = []
+            for row in results:
+                name = row.get("region_name")
+                count = row.get("vote_count")
+                if date_filter:
+                    response_lines.append(f"💬 {name} ({date_filter}): {count} голоса(-ов)")
+                else:
+                    response_lines.append(f"💬 {name}: {count} голоса(-ов)")
 
-    # Вывод итоговой статистики
-    if target_month:
-        if days_processed == 0:
-            await message.answer(f"📅 За месяц <b>{target_month}</b> нет данных о голосованиях.", parse_mode="HTML")
-        else:
-            summary = (
-                f"\n📊 <b>Итого за месяц {target_month}:</b>\n"
-                f"• Дней с голосами: {days_processed}\n"
-                f"• Всего голосов: {total_count_all}"
-            )
-            await message.answer(summary, parse_mode="HTML")
-    else:
-        # Если месяц не указан — просто общий итог
-        if total_count_all == 0:
-            await message.answer("📂 Нет данных о голосованиях за всё время.")
-        else:
-            summary = (
-                f"📊 <b>Общая статистика за всё время:</b>\n"
-                f"• Дней с голосами: {days_processed}\n"
-                f"• Всего голосов: {total_count_all}"
-            )
-            await message.answer(summary, parse_mode="HTML")
+            result_text = "\n".join(response_lines)
+            await message.answer(result_text)
+
+    except Exception as e:
+        await message.answer("Произошла ошибка при получении статистики.")
+        print(f"Ошибка: {e}")
 
 
 @dp.message()
