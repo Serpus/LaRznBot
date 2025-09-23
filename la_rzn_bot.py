@@ -215,7 +215,7 @@ async def send_daily_message():
             log(f"Ошибка при удалении сообщения: {e}")
         try:
             thread_id = db.get_thread_id(chat_id)
-            if chat_id == -1001635093935:
+            if int(chat_id) == -1001635093935:
                 daily_message = params.generate_old_daily_message(chat_id)
             else:
                 daily_message = params.generate_daily_message(chat_id)
