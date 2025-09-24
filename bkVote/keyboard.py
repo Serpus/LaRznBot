@@ -1,5 +1,4 @@
-from aiogram import F, Dispatcher
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 
 def get_vote_button_keyboard():

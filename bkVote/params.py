@@ -1,5 +1,4 @@
 import db
-from bot_logger import log
 from db import update_data
 
 chat_id_slujebka = -1003043852228
