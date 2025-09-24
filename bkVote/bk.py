@@ -160,7 +160,6 @@ def register(dp: Dispatcher, bot: Bot):
             await message.answer("Произошла ошибка при получении статистики.")
             print(f"Ошибка: {e}")
 
-
 async def send_daily_message(bot: Bot):
     for row in db.get_chats():
         chat_id = row.get("chat_id")

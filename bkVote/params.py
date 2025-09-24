@@ -1,5 +1,4 @@
 import db
-from db import update_data
 
 chat_id_slujebka = -1003043852228
 vote_link = "https://burgerkingapp.onelink.me/220f/g4k9umfa"
@@ -58,8 +57,8 @@ def get_last_message_id(chat_id: int):
 
 
 def set_last_message_id(chat_id, value):
-    update_data(f"update region_chats set last_message_id = {value} where chat_id = {chat_id} ")
+    db.update_data(f"update region_chats set last_message_id = {value} where chat_id = {chat_id} ")
 
 
 def set_reply_message_id(chat_id, value):
-    update_data(f"update region_chats set reply_message_id = {value} where chat_id = {chat_id} ")
+    db.update_data(f"update region_chats set reply_message_id = {value} where chat_id = {chat_id} ")

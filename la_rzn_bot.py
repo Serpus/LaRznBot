@@ -1,6 +1,7 @@
 from bkVote import callbacks, bk
+from novice import novice_listner
 
-from aiogram import Bot, Dispatcher, types
+from aiogram import Bot, Dispatcher, types, Router
 from aiogram.types import ErrorEvent
 from dotenv import load_dotenv
 from bot_logger import log
@@ -10,24 +11,19 @@ import os
 
 load_dotenv()
 bot = Bot(token=os.getenv("API_KEY"))
+router = Router()
 dp = Dispatcher()
+dp.include_router(router)
 
 callbacks.register(dp, bot)
 bk.register(dp, bot)
+novice_listner.register(router)
 
 
 # @dp.message(Command("test"))
 async def test(message: types.Message):
     await message.answer("Тестовое сообщение")
     # await bot.send_message(chat_id=chat_id_slujebka, text="Тестовое сообщение")
-
-
-@dp.message()
-async def echo(message: types.Message):
-    log(f"Получено сообщение с id {message.message_id}, "
-        f"группа {message.chat.id}, "
-        f"тема {message.message_thread_id} (), "
-        f"от {message.from_user.username}")
 
 
 @dp.error()

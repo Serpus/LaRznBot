@@ -1,11 +1,10 @@
 from datetime import datetime
-import params
 import db
 
 from aiogram import Dispatcher, F, Bot
 from aiogram.types import CallbackQuery
 
-import keyboard
+from bkVote import params, keyboard
 from bot_logger import log
 
 
