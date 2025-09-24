@@ -55,7 +55,7 @@ async def main():
     scheduler.start()
 
     # При старте сразу планируем задачу
-    await on_startup(scheduler)
+    # await on_startup(scheduler)
 
     # Запускаем бота
     await dp.start_polling(bot)

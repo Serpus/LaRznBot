@@ -20,28 +20,26 @@ def register(router: Router):
             elif line.startswith("A:"):
                 answers[current_q] = line[3:].strip()
         log(f"Новая анкета: {answers}")
-        # save_to_db(answers)
-        # save_to_excel(answers)
+        save_to_db(answers)
+        await save_to_excel(answers, message)
         await message.react(reaction=[ReactionTypeEmoji(emoji="👾")])
 
-    def save_to_excel(answers):
+    async def save_to_excel(answers, message: types.Message):
         full_name = answers.get("Фамилия Имя Отчество", "")
         location = answers.get("Населенный пункт (город, поселок+район, деревня+район)", "")
         phone = answers.get("Телефон (просьба писать через 8, без пробелов)", "")
         telegram = answers.get("Ссылка на телеграм", "")
 
-        file_name = "Список отряда.xlsx"
+        file_name = "novice/Новички.xlsx"
         try:
             # Открываем файл или создаём новый
             wb = openpyxl.load_workbook(file_name)
-        except FileNotFoundError:
-            wb = openpyxl.Workbook()
-            ws = wb.active
-            ws.append(
-                ["Кто прозванивает", "Город", "ФИО", "Позывной" "Телефон", "Телеграмм", "Форум", "Вводная", "Городская",
-                 "Полевая", "Остался в отряде"])
+        except FileNotFoundError as e:
+            log(f"Не удалось найти файл {file_name}")
+            await message.react(reaction=[ReactionTypeEmoji(emoji="😡")])
+            raise e
         ws = wb.active
-        ws.append(["", location, full_name, "", phone, telegram, "0", "0", "0", "0", "0"])
+        ws.append([None, location, full_name, "", int(phone), telegram])
         wb.save(file_name)
 
     def save_to_db(answers):
