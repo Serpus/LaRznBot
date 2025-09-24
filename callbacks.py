@@ -13,8 +13,12 @@ from bot_logger import log
 
 def register(dp: Dispatcher, bot: Bot):
     async def update_message(chat_id, message_id: int):
+        if chat_id == -1001635093935:
+            daily_message = params.generate_old_daily_message(chat_id)
+        else:
+            daily_message = params.generate_daily_message(chat_id)
         await bot.edit_message_caption(chat_id=chat_id, message_id=message_id,
-                                       caption=params.generate_daily_message(chat_id), parse_mode='HTML',
+                                       caption=daily_message, parse_mode='HTML',
                                        reply_markup=keyboard.get_vote_button_keyboard())
 
     @dp.callback_query(F.data == "user_voted")
