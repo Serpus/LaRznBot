@@ -1,3 +1,4 @@
+import os
 import sqlite3
 
 import openpyxl
@@ -24,8 +25,11 @@ def register(router: Router):
                 answers[current_q] = line[3:].strip()
         log(f"Новая анкета: {answers}")
         save_to_db(answers)
+
+        download_file_from_yandex_disk()
         await save_to_excel(answers, message)
-        # upload_file_to_yandex_disk()
+        upload_file_to_yandex_disk()
+
         await message.react(reaction=[ReactionTypeEmoji(emoji="👾")])
 
     async def save_to_excel(answers, message: types.Message):
@@ -71,16 +75,74 @@ def register(router: Router):
         finally:
             conn.close()
 
-    def upload_file_to_yandex_disk(oauth_token):
+    def download_file_from_yandex_disk():
+        """
+        Скачивает файл с Яндекс.Диска.
+
+        Returns:
+            bool: True, если файл успешно скачан, иначе False.
+        """
+        disk_file_path = "Новички.xlsx"
+        base_url = "https://cloud-api.yandex.net/v1/disk/resources/download"
+        oauth_token = os.getenv("OAUTH")
+        headers = {
+            'Authorization': f'OAuth {oauth_token}'
+        }
+
+        # 1. Запросить URL для скачивания
+        encoded_path = quote(disk_file_path, safe='')
+        params = {'path': disk_file_path}
+
+        try:
+            response = requests.get(base_url, headers=headers, params=params)
+            response.raise_for_status()  # Проверка на HTTP ошибки (4xx, 5xx)
+
+            download_data = response.json()
+            download_url = download_data.get('href')
+
+            if not download_url:
+                log("Ошибка: 'href' не найден в ответе API.")
+                return False
+
+        except requests.exceptions.RequestException as e:
+            log(f"Ошибка при запросе URL для скачивания: {e}")
+            return False
+        except ValueError:  # Обработка ошибки при парсинге JSON
+            log("Ошибка: Невозможно разобрать JSON-ответ при получении URL для скачивания.")
+            return False
+
+        # 2. Скачать файл по полученному URL
+        try:
+            # Важно: использовать тот же токен, что и в исходном запросе
+            download_response = requests.get(download_url, headers=headers)
+            download_response.raise_for_status()
+
+            with open(file_xlsx_path, 'wb') as f:
+                f.write(download_response.content)
+            log(f"Файл успешно скачан: {file_xlsx_path}")
+            return True
+
+        except requests.exceptions.RequestException as e:
+            log(f"Ошибка при скачивании файла: {e}")
+            return False
+        except IOError as e:
+            log(f"Ошибка при сохранении файла локально: {e}")
+            return False
+        except Exception as e:
+            log(f"Неизвестная ошибка: {e}")
+            return False
+
+    def upload_file_to_yandex_disk():
         """
         Загружает файл на Яндекс.Диск.
-
-        :param oauth_token: OAuth-токен для доступа к Яндекс.Диску.
+        Для получения токена: https://oauth.yandex.ru/authorize?response_type=token&client_id=<ClientID>
         """
+
         # 1. Подготовка: кодирование пути и формирование URL запроса с overwrite=true
         encoded_path = quote("Новички.xlsx", safe='')  # Кодируем путь для URL
         # Добавляем параметр overwrite=true к URL
         upload_url_request = f"https://cloud-api.yandex.net/v1/disk/resources/upload?path={encoded_path}&overwrite=true"
+        oauth_token = os.getenv("OAUTH")
 
         headers = {
             'Authorization': f'OAuth {oauth_token}'
@@ -88,7 +150,7 @@ def register(router: Router):
 
         try:
             # 2. Запрос URL для загрузки
-            print("Запрашиваю URL для загрузки (с перезаписью)...")
+            log("Запрашиваю URL для загрузки (с перезаписью)...")
             response_get_url = requests.get(upload_url_request, headers=headers)
 
             if response_get_url.status_code == 200:
@@ -96,34 +158,34 @@ def register(router: Router):
                 upload_href = upload_data.get('href')
 
                 if not upload_href:
-                    print("Ошибка: Не получен URL для загрузки из ответа API.")
+                    log("Ошибка: Не получен URL для загрузки из ответа API.")
                     return
 
-                print(f"Получен URL для загрузки (действителен 30 мин).")
+                log(f"Получен URL для загрузки (действителен 30 мин).")
 
                 # 3. Загрузка файла по полученному URL
-                print(f"Начинаю загрузку файла {file_xlsx_path} ...")
+                log(f"Начинаю загрузку файла {file_xlsx_path} ...")
                 with open(file_xlsx_path, 'rb') as file:
                     # Важно: Не указываем OAuth токен в заголовках для запроса на upload_href
                     response_upload = requests.put(upload_href, data=file)
 
                 if response_upload.status_code in [201, 202]:  # 201 - создан, 202 - принят
-                    print(f"Файл 'Новички.xlsx' успешно загружен (или перезаписан) на Яндекс.Диск.")
+                    log(f"Файл 'Новички.xlsx' успешно загружен (или перезаписан) на Яндекс.Диск.")
                 else:
-                    print(f"Ошибка при загрузке файла. Код ответа: {response_upload.status_code}")
-                    print(f"Тело ответа: {response_upload.text}")
+                    log(f"Ошибка при загрузке файла. Код ответа: {response_upload.status_code}")
+                    log(f"Тело ответа: {response_upload.text}")
 
             elif response_get_url.status_code == 409:
                 # Эта ошибка маловероятна с overwrite=true, но возможна в других сценариях
-                print(f"Ошибка при запросе URL: {response_get_url.status_code}. "
+                log(f"Ошибка при запросе URL: {response_get_url.status_code}. "
                       f"Тело ответа: {response_get_url.text}")
             else:
-                print(f"Ошибка при запросе URL для загрузки. Код ответа: {response_get_url.status_code}")
-                print(f"Тело ответа: {response_get_url.text}")
+                log(f"Ошибка при запросе URL для загрузки. Код ответа: {response_get_url.status_code}")
+                log(f"Тело ответа: {response_get_url.text}")
 
         except requests.exceptions.RequestException as e:
-            print(f"Произошла ошибка при выполнении запроса: {e}")
+            log(f"Произошла ошибка при выполнении запроса: {e}")
         except FileNotFoundError:
-            print(f"Локальный файл '{file_xlsx_path}' не найден.")
+            log(f"Локальный файл '{file_xlsx_path}' не найден.")
         except Exception as e:
-            print(f"Произошла непредвиденная ошибка: {e}")
+            log(f"Произошла непредвиденная ошибка: {e}")
