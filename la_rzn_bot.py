@@ -177,13 +177,18 @@ async def all_stats_day(message: types.Message):
 
             # Формируем текст ответа
             response_lines = [f"📊 Статистика по дням за {date_filter}:"]
+            all_votes = 0
 
             for vote_date in sorted(daily_stats.keys()):
-                response_lines.append(f"\n📅 {vote_date}:")
+                _votes = 0
                 for region_name, vote_count in daily_stats[vote_date]:
-                    response_lines.append(f"  💬 {region_name}: {vote_count} голоса(-ов)")
+                    all_votes += vote_count
+                    _votes += vote_count
+                    # response_lines.append(f"  💬 {region_name}: {vote_count} голоса(-ов)")
+                response_lines.append(f"\n📅 {vote_date}: {_votes} голоса(-ов)")
 
             result_text = "\n".join(response_lines)
+            result_text += f"\n\nВсего голосов за указанный период: {all_votes}"
             await message.answer(result_text)
 
     except Exception as e:
