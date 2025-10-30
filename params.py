@@ -5,6 +5,7 @@ from db import update_data
 chat_id_slujebka = -1003043852228
 vote_link = "https://burgerkingapp.onelink.me/220f/g4k9umfa"
 short_vote_link = "https://clck.ru/3PHUak"
+pk_vote_link = "https://burgerkingrus.ru/charityfoundations"
 bk_instruction_post = "https://t.me/lizaalertryazan/7684/7685"
 
 # -1001635093935 - реальный чат ЛА
@@ -20,7 +21,9 @@ def generate_old_daily_message(chat_id):
 
 <u>Самый энергичный по голосованию регион оденется в отрядную форму!</u>
 
-Ссылка для голосования: {short_vote_link}
+Ссылки для голосования: 
+{vote_link}
+{pk_vote_link}
 Полная инструкция с видео: {bk_instruction_post}
 
 <i>Мы проголосовали: {vote_count} раз(а)</i>
