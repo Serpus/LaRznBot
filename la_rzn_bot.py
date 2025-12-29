@@ -1,5 +1,4 @@
 from bkVote import callbacks, bk
-from novice import novice_listner
 
 from aiogram import Bot, Dispatcher, types, Router
 from aiogram.types import ErrorEvent
@@ -17,7 +16,6 @@ dp.include_router(router)
 
 callbacks.register(dp, bot)
 bk.register(dp, bot)
-novice_listner.register(router)
 
 
 # @dp.message(Command("test"))
