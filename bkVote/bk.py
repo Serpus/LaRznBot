@@ -160,6 +160,72 @@ def register(dp: Dispatcher, bot: Bot):
             await message.answer("Произошла ошибка при получении статистики.")
             print(f"Ошибка: {e}")
 
+    @dp.message(Command("period_stats"))
+    async def period_stats(message: types.Message):
+        if message.chat.id not in (649062985, -2869358118):
+            return
+        # Получаем аргументы команды
+        command_parts = message.text.split()
+
+        # Проверяем, переданы ли оба аргумента (дата начала и дата окончания)
+        if len(command_parts) < 3:
+            await message.answer("Пожалуйста, укажите период в формате: YYYY-MM-DD YYYY-MM-DD")
+            return
+
+        start_date = command_parts[1]
+        end_date = command_parts[2]
+
+        # Проверяем формат дат
+        try:
+            # Проверяем, что даты в формате YYYY-MM-DD
+            datetime.strptime(start_date, '%Y-%m-%d')
+            datetime.strptime(end_date, '%Y-%m-%d')
+        except ValueError:
+            await message.answer("Неверный формат дат. Используйте формат: YYYY-MM-DD YYYY-MM-DD")
+            return
+
+        # Проверяем, что начальная дата не позже конечной
+        if start_date > end_date:
+            await message.answer("Начальная дата не может быть позже конечной даты.")
+            return
+
+        # Запрос: считаем количество голосов по chat_id за указанный период
+        query = """
+        SELECT 
+            v.chat_id,
+            r.region_name,
+            COUNT(*) as vote_count
+        FROM voters v
+        JOIN region_chats r on r.chat_id = v.chat_id
+        WHERE v.vote_date >= ? AND v.vote_date <= ?
+        GROUP BY v.chat_id
+        ORDER BY vote_count DESC;
+        """
+
+        try:
+            results = db.get_data_from_db_params(query, [start_date, end_date])
+
+            # Формируем ответ
+            if not results:
+                await message.answer(f"Нет данных за период с {start_date} по {end_date}.")
+            else:
+                response_lines = [f"📊 Статистика за период с {start_date} по {end_date}:"]
+
+                total_votes = 0
+                for row in results:
+                    region_name = row.get("region_name")
+                    vote_count = row.get("vote_count")
+                    response_lines.append(f"💬 {region_name}: {vote_count} голоса(-ов)")
+                    total_votes += vote_count
+
+                response_lines.append(f"\n📈 Всего голосов за период: {total_votes}")
+                result_text = "\n".join(response_lines)
+                await message.answer(result_text)
+
+        except Exception as e:
+            await message.answer("Произошла ошибка при получении статистики.")
+            print(f"Ошибка: {e}")
+
 async def send_daily_message(bot: Bot):
     for row in db.get_chats():
         chat_id = row.get("chat_id")
