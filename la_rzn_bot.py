@@ -26,7 +26,7 @@ async def test(message: types.Message):
 
 @dp.error()
 async def handle_errors(error: ErrorEvent):
-    log(f"Ошибка: {error}")
+    log(f"Ошибка: {error.exception.with_traceback(error.__traceback__)}")
 
 
 async def on_startup(scheduler: AsyncIOScheduler):
