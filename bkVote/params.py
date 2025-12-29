@@ -1,4 +1,4 @@
-import db
+from bkVote import db
 
 chat_id_slujebka = -1003043852228
 vote_link = "https://burgerkingapp.onelink.me/220f/g4k9umfa"
@@ -47,8 +47,8 @@ def get_reply_message_id(chat_id: int):
 
 
 def get_vote_count(chat_id: int):
-    row = db.get_data_from_db_first_row(f"select count(*) from voters where chat_id = {chat_id}")
-    return row.get("count(*)")
+    row = db.get_data_from_db_first_row(f"select max(id) as id_max from voters where chat_id = {chat_id}")
+    return row.get("id_max")
 
 
 def get_last_message_id(chat_id: int):

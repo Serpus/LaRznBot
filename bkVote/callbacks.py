@@ -1,10 +1,9 @@
 from datetime import datetime
-import db
 
 from aiogram import Dispatcher, F, Bot
 from aiogram.types import CallbackQuery
 
-from bkVote import params, keyboard
+from bkVote import params, keyboard, db
 from bot_logger import log
 
 

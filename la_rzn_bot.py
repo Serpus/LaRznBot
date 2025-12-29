@@ -1,3 +1,5 @@
+import traceback
+
 from bkVote import callbacks, bk
 
 from aiogram import Bot, Dispatcher, types, Router
@@ -26,7 +28,8 @@ async def test(message: types.Message):
 
 @dp.error()
 async def handle_errors(error: ErrorEvent):
-    log(f"Ошибка: {error.exception.with_traceback(error.__traceback__)}")
+    log(f"Ошибка: {error.exception}")
+    log(traceback.format_exc())
 
 
 async def on_startup(scheduler: AsyncIOScheduler):

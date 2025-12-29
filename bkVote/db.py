@@ -1,7 +1,7 @@
 import sqlite3
 from bot_logger import log
 
-db_name = "db/regions.db"
+db_name = "database/regions.db"
 
 
 def get_data_from_db(select: str):
