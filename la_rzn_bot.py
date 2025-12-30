@@ -3,11 +3,11 @@ import random
 
 from aiogram.filters import Command
 
-import callbacks
-import keyboard
+from bkVote import callbacks
+from bkVote import keyboard
 from datetime import datetime, timedelta, time
-import params
-import db
+from bkVote import params
+from bkVote import db
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import ErrorEvent
@@ -22,178 +22,13 @@ load_dotenv()
 bot = Bot(token=os.getenv("API_KEY"))
 dp = Dispatcher()
 
-message_text = f"""Для вашего удобства взяли с сайта БК QR-код и ссылку, по которой можно перейти и сразу попасть на страницу с голосованием*
-{params.short_vote_link}
-По вопросам: @Serpus1
-
-<i>*Приложение должно быть установлено</i>"""
-
 callbacks.register(dp, bot)
-
-
-# @dp.message(Command("test"))
-async def test(message: types.Message):
-    await message.answer("Тестовое сообщение")
-    # await bot.send_message(chat_id=chat_id_slujebka, text="Тестовое сообщение")
-
-
-# @dp.message(Command("message"))
-async def send_message(message: types.Message):
-    sent_message = await bot.send_photo(chat_id=params.la_chat_id, message_thread_id=params.bk_thread_id,
-                                        photo=types.FSInputFile("resources/qr.png"),
-                                        caption=message_text, parse_mode="HTML")
-    log(f"ID отправленного сообщения: {sent_message.message_id}")
-    params.set_reply_message_id(sent_message.message_id)
-    params.set_last_message_id(0)
 
 
 @dp.message(Command("daily"))
 async def daily(message: types.Message):
     if message.chat.id == 649062985:
         await send_daily_message()
-
-
-@dp.message(Command("all_stats"))
-async def count_voters_per_day(message: types.Message):
-    if message.chat.id not in (649062985, -2869358118):
-        return
-    # Получаем аргументы команды
-    command_parts = message.text.split()
-    date_filter = command_parts[1] if len(command_parts) > 1 else None
-
-    # Формируем условие WHERE
-    if date_filter:
-        # Проверяем формат YYYY-MM
-        try:
-            year, month = map(int, date_filter.split('-'))
-            # Формируем диапазон дат для месяца
-            start_date = f"{year}-{month:02d}-01"
-            end_date = f"{year}-{month:02d}-31"
-            where_clause = f"WHERE vote_date >= ? AND vote_date <= ?"
-            parameters = [start_date, end_date]
-        except ValueError:
-            await message.answer("Неверный формат даты. Используйте YYYY-MM.")
-            return
-    else:
-        where_clause = ""
-        parameters = []
-
-    # Запрос: считаем количество голосов по chat_id
-    query = f"""
-    SELECT 
-        v.chat_id,
-        r.region_name,
-        COUNT(*) as vote_count
-    FROM voters v
-    JOIN region_chats r on r.chat_id = v.chat_id
-    {where_clause}
-    GROUP BY v.chat_id
-    ORDER BY vote_count DESC;
-    """
-
-    try:
-        results = db.get_data_from_db_params(query, parameters)
-
-        # Формируем ответ
-        if not results:
-            await message.answer("Нет данных за выбранный период.")
-        else:
-            response_lines = []
-            for row in results:
-                name = row.get("region_name")
-                count = row.get("vote_count")
-                if date_filter:
-                    response_lines.append(f"💬 {name} ({date_filter}): {count} голоса(-ов)")
-                else:
-                    response_lines.append(f"💬 {name}: {count} голоса(-ов)")
-
-            result_text = "\n".join(response_lines)
-            await message.answer(result_text)
-
-    except Exception as e:
-        await message.answer("Произошла ошибка при получении статистики.")
-        print(f"Ошибка: {e}")
-
-
-@dp.message(Command("all_stats_day"))
-async def all_stats_day(message: types.Message):
-    if message.chat.id not in (649062985, -2869358118):
-        return
-    # Получаем аргументы команды
-    command_parts = message.text.split()
-
-    # Проверяем, передан ли аргумент
-    if len(command_parts) < 2:
-        await message.answer("Пожалуйста, укажите дату в формате YYYY-MM.")
-        return
-
-    date_filter = command_parts[1]
-
-    # Проверяем формат YYYY-MM
-    try:
-        year, month = map(int, date_filter.split('-'))
-        if not (1 <= month <= 12):
-            raise ValueError("Неверный месяц")
-    except ValueError:
-        await message.answer("Неверный формат даты. Используйте YYYY-MM.")
-        return
-
-    # Определяем первый и последний день месяца
-    import calendar
-    last_day = calendar.monthrange(year, month)[1]
-    start_date = f"{year}-{month:02d}-01"
-    end_date = f"{year}-{month:02d}-{last_day}"
-
-    # Запрос: считаем количество голосов по дням и чатам
-    query = """
-    SELECT 
-        v.vote_date,
-        v.chat_id,
-        r.region_name,
-        COUNT(*) as vote_count
-    FROM voters v
-    JOIN region_chats r ON r.chat_id = v.chat_id
-    WHERE v.vote_date >= ? AND v.vote_date <= ?
-    GROUP BY v.vote_date, v.chat_id
-    ORDER BY v.vote_date, vote_count DESC;
-    """
-
-    try:
-        results = db.get_data_from_db_params(query, [start_date, end_date])
-
-        # Формируем ответ
-        if not results:
-            await message.answer(f"Нет данных за период {date_filter}.")
-        else:
-            # Группируем данные по дням
-            from collections import defaultdict
-            daily_stats = defaultdict(list)
-
-            for row in results:
-                vote_date = row.get("vote_date")
-                region_name = row.get("region_name")
-                vote_count = row.get("vote_count")
-                daily_stats[vote_date].append((region_name, vote_count))
-
-            # Формируем текст ответа
-            response_lines = [f"📊 Статистика по дням за {date_filter}:"]
-            all_votes = 0
-
-            for vote_date in sorted(daily_stats.keys()):
-                _votes = 0
-                for region_name, vote_count in daily_stats[vote_date]:
-                    all_votes += vote_count
-                    _votes += vote_count
-                    # response_lines.append(f"  💬 {region_name}: {vote_count} голоса(-ов)")
-                response_lines.append(f"\n📅 {vote_date}: {_votes} голоса(-ов)")
-
-            result_text = "\n".join(response_lines)
-            result_text += f"\n\nВсего голосов за указанный период: {all_votes}"
-            await message.answer(result_text)
-
-    except Exception as e:
-        await message.answer("Произошла ошибка при получении статистики.")
-        print(f"Ошибка: {e}")
 
 
 @dp.message()
