@@ -1,5 +1,5 @@
-import json
 import random
+import traceback
 
 from aiogram.filters import Command
 
@@ -8,6 +8,7 @@ from bkVote import keyboard
 from datetime import datetime, timedelta, time
 from bkVote import params
 from bkVote import db
+from bkVote import bk
 
 from aiogram import Bot, Dispatcher, types
 from aiogram.types import ErrorEvent
@@ -23,7 +24,7 @@ bot = Bot(token=os.getenv("API_KEY"))
 dp = Dispatcher()
 
 callbacks.register(dp, bot)
-
+bk.register(dp, bot)
 
 @dp.message(Command("daily"))
 async def daily(message: types.Message):
@@ -41,7 +42,8 @@ async def echo(message: types.Message):
 
 @dp.error()
 async def handle_errors(error: ErrorEvent):
-    log(f"Ошибка: {error}")
+    log(f"Ошибка: {error.exception}")
+    log(traceback.format_exc())
 
 
 async def send_daily_message():
