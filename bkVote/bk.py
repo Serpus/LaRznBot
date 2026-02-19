@@ -242,13 +242,11 @@ async def send_daily_message(bot: Bot):
             else:
                 daily_message = params.generate_daily_message(chat_id)
             reply_message_id = params.get_reply_message_id(chat_id)
-            button_keyboard = keyboard.get_vote_button_keyboard()
             sent_message = await bot.send_photo(chat_id=chat_id,
                                                 message_thread_id=thread_id,
                                                 photo=types.FSInputFile("resources/image.jpg"),
                                                 caption=daily_message, parse_mode="HTML",
-                                                reply_to_message_id=reply_message_id,
-                                                reply_markup=button_keyboard)
+                                                reply_to_message_id=reply_message_id)
             log(f"chat_id {chat_id}: ID отправленного сообщения: {sent_message.message_id}")
             params.set_last_message_id(chat_id, sent_message.message_id)
         except Exception as e:

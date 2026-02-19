@@ -14,8 +14,7 @@ def register(dp: Dispatcher, bot: Bot):
         else:
             daily_message = params.generate_daily_message(chat_id)
         await bot.edit_message_caption(chat_id=chat_id, message_id=message_id,
-                                       caption=daily_message, parse_mode='HTML',
-                                       reply_markup=keyboard.get_vote_button_keyboard())
+                                       caption=daily_message, parse_mode='HTML')
 
     @dp.callback_query(F.data == "user_voted")
     async def handle_vote_callback(callback: CallbackQuery):
